@@ -1,0 +1,22 @@
+# Java / Maven
+backend/target/
+*.jar
+*.war
+*.class
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.next/
+
+# Env
+.env
+.env.local
+
+# OS
+.DS_Store
+
+# IDE
+.idea/
+*.iml
+.vscode/
