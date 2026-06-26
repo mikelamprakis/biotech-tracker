@@ -2,7 +2,7 @@ services:
   - type: web
     name: biotech-tracker-backend
     runtime: image
-    dockerfilePath: backend/Dockerfile
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: DB_URL
         sync: false
