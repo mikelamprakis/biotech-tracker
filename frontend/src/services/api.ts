@@ -1,4 +1,6 @@
-const BASE = '/api'
+const BASE = import.meta.env.PROD
+  ? 'https://biotech-tracker-kza2.onrender.com/api'
+  : '/api'
 
 export interface Disease {
   id: number
