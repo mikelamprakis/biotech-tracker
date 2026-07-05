@@ -36,7 +36,10 @@ public class PubMedIngestionJob {
     private static final Map<String, String> DISEASE_QUERIES = Map.of(
             "ALS", "amyotrophic+lateral+sclerosis+treatment",
             "Alzheimer's Disease", "alzheimer+disease+therapy",
-            "Pancreatic Cancer", "pancreatic+cancer+treatment"
+            "Pancreatic Cancer", "pancreatic+cancer+treatment",
+            "Ankylosing Spondylitis", "ankylosing+spondylitis+treatment",
+            "Brain Cancer", "brain+cancer+treatment",
+            "Parkinson's Disease", "parkinson+disease+therapy"
     );
 
     private final DiseaseRepository diseaseRepository;

@@ -33,7 +33,10 @@ public class ClinicalTrialsIngestionJob {
     private static final Map<String, String> DISEASE_QUERIES = Map.of(
             "ALS", "Amyotrophic+Lateral+Sclerosis",
             "Alzheimer's Disease", "Alzheimer+Disease",
-            "Pancreatic Cancer", "Pancreatic+Cancer"
+            "Pancreatic Cancer", "Pancreatic+Cancer",
+            "Ankylosing Spondylitis", "Ankylosing+Spondylitis",
+            "Brain Cancer", "Brain+Neoplasms",
+            "Parkinson's Disease", "Parkinson+Disease"
     );
 
     private final DiseaseRepository diseaseRepository;
