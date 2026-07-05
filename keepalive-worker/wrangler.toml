@@ -1,0 +1,12 @@
+name = "biotech-tracker-keepalive"
+main = "src/index.js"
+compatibility_date = "2024-11-01"
+
+# Ping every 10 minutes to keep the Render free-tier backend warm.
+# Free web services spin down after ~15 min idle; 10 min leaves margin.
+[triggers]
+crons = ["*/10 * * * *"]
+
+[vars]
+# The endpoint to ping. Change this if your backend URL changes.
+HEALTH_URL = "https://biotech-tracker-kza2.onrender.com/api/health"
