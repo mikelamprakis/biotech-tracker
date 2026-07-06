@@ -1,24 +1,33 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { api, Event, Paged } from '../services/api'
+import { api, Disease, Event, Paged } from '../services/api'
 import Paginator from '../components/Paginator'
 
 export default function EventFeed() {
   const [data, setData] = useState<Paged<Event> | null>(null)
+  const [diseases, setDiseases] = useState<Disease[]>([])
   const [page, setPage] = useState(0)
   const [filter, setFilter] = useState<string>('ALL')
   const [loading, setLoading] = useState(true)
 
+  // Full disease list for the filter chips — independent of which events are on
+  // the current page, so every tracked disease is always selectable.
+  useEffect(() => {
+    api.getDiseases().then(setDiseases).catch(() => {})
+  }, [])
+
   useEffect(() => {
     setLoading(true)
-    api.getAllEvents(page, 50).then(setData).finally(() => setLoading(false))
-  }, [page])
+    api.getAllEvents(page, 50, filter).then(setData).finally(() => setLoading(false))
+  }, [page, filter])
 
-  const diseases = data
-    ? ['ALL', ...Array.from(new Set(data.content.map(e => e.diseaseName)))]
-    : ['ALL']
+  const selectFilter = (slug: string) => {
+    setFilter(slug)
+    setPage(0)
+  }
 
-  const events = data?.content.filter(e => filter === 'ALL' || e.diseaseName === filter) ?? []
+  const chips = [{ name: 'All', slug: 'ALL' }, ...diseases]
+  const events = data?.content ?? []
 
   return (
     <div className="container page">
@@ -26,12 +35,12 @@ export default function EventFeed() {
       <p className="subtitle">All updates across tracked diseases, newest first.</p>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        {diseases.map(d => (
+        {chips.map(d => (
           <button
-            key={d}
-            onClick={() => setFilter(d)}
+            key={d.slug}
+            onClick={() => selectFilter(d.slug)}
             style={{
-              background: filter === d ? 'var(--accent)' : 'var(--surface)',
+              background: filter === d.slug ? 'var(--accent)' : 'var(--surface)',
               border: '1px solid var(--border)',
               color: 'var(--text)',
               padding: '4px 14px',
@@ -40,7 +49,7 @@ export default function EventFeed() {
               fontSize: '0.82rem',
             }}
           >
-            {d}
+            {d.name}
           </button>
         ))}
       </div>

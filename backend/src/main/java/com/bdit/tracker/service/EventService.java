@@ -28,6 +28,12 @@ public class EventService {
         return toResponse(p);
     }
 
+    public PagedResponse<EventDTO> findByDiseaseSlug(String slug, int page, int size) {
+        Page<Event> p = eventRepository.findByDiseaseSlugOrderByCreatedAtDesc(
+                slug, PageRequest.of(page, size));
+        return toResponse(p);
+    }
+
     private PagedResponse<EventDTO> toResponse(Page<Event> p) {
         return new PagedResponse<>(
                 p.getContent().stream().map(this::toDTO).toList(),

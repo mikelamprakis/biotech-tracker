@@ -71,6 +71,8 @@ export const api = {
     get<Paged<Publication>>(`/diseases/${slug}/papers?page=${page}&size=${size}`),
   getDiseaseEvents: (slug: string, page = 0, size = 20) =>
     get<Paged<Event>>(`/diseases/${slug}/events?page=${page}&size=${size}`),
-  getAllEvents: (page = 0, size = 50) =>
-    get<Paged<Event>>(`/events?page=${page}&size=${size}`),
+  getAllEvents: (page = 0, size = 50, diseaseSlug?: string) =>
+    get<Paged<Event>>(
+      `/events?page=${page}&size=${size}` +
+      (diseaseSlug && diseaseSlug !== 'ALL' ? `&disease=${diseaseSlug}` : '')),
 }

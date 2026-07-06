@@ -10,6 +10,7 @@ import java.util.List;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
     Page<Event> findByDiseaseIdOrderByCreatedAtDesc(Long diseaseId, Pageable pageable);
+    Page<Event> findByDiseaseSlugOrderByCreatedAtDesc(String diseaseSlug, Pageable pageable);
     Page<Event> findAllByOrderByCreatedAtDesc(Pageable pageable);
     List<Event> findByDiseaseIdAndCreatedAtAfterOrderByCreatedAtDesc(Long diseaseId, LocalDateTime after);
 }
