@@ -106,6 +106,16 @@ Ingestion normally runs on `INGESTION_CRON` (`0 0 */8 * * *` — every 8 hours).
 curl -X POST https://biotech-tracker-kza2.onrender.com/api/admin/ingest
 ```
 
+It returns `{"status":"ingestion started"}` immediately and does the work on a background thread, so
+the response tells you nothing about the outcome. **Budget ~4–5 minutes for a full sweep** — Render's
+free tier gives ~0.1 CPU, so each disease takes roughly 20 seconds against ~0.4s on a laptop. Diseases
+are processed in `disease.id` order, so the most recently added ones populate *last*; don't conclude a
+new disease has failed until the whole run has had time to finish. Watch progress with:
+
+```bash
+curl -s https://biotech-tracker-kza2.onrender.com/api/diseases | python3 -m json.tool
+```
+
 ⚠️ This endpoint is **unauthenticated** (the MVP has no auth by design). It only pulls from public
 sources and is idempotent — records upsert on `nct_id` / `pubmed_id` — so the blast radius is low, but
 it is publicly callable. Worth putting behind a shared secret if the project grows.
