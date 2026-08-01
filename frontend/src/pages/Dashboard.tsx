@@ -21,7 +21,10 @@ export default function Dashboard() {
   return (
     <div className="container page">
       <h1>Disease Intelligence Dashboard</h1>
-      <p className="subtitle">Real-time tracking of ALS, Alzheimer's Disease, Pancreatic Cancer, Ankylosing Spondylitis, Brain Cancer, and Parkinson's Disease research progress.</p>
+      {/* Derived from the API so adding a disease needs only a migration, not a copy edit. */}
+      <p className="subtitle">
+        Real-time tracking of clinical trial and research progress across {diseases.length} diseases.
+      </p>
 
       <div className="card-grid">
         {diseases.map(d => (

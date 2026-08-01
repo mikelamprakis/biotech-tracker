@@ -1,7 +1,9 @@
 # Positioning & Launch Playbook
 
 How to frame the Biotech Disease Intelligence Tracker and announce it on social media.
-Currently tracks: **ALS, Alzheimer's, Pancreatic Cancer, Ankylosing Spondylitis, Brain Cancer, Parkinson's Disease.**
+Currently tracks 10 diseases: **ALS, Alzheimer's, Pancreatic Cancer, Ankylosing Spondylitis, Brain Cancer,
+Parkinson's Disease, Idiopathic Pulmonary Fibrosis, COPD, MASH (metabolic dysfunction-associated
+steatohepatitis), Primary Sclerosing Cholangitis.**
 
 ---
 

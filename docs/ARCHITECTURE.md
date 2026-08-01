@@ -4,7 +4,9 @@
 > regulatory/development events) for a curated set of diseases and translates raw medical data
 > into simple, structured signal.
 
-**Currently tracked diseases:** ALS, Alzheimer's Disease, Pancreatic Cancer, Ankylosing Spondylitis, Brain Cancer, Parkinson's Disease.
+**Currently tracked diseases (10):** ALS, Alzheimer's Disease, Pancreatic Cancer, Ankylosing Spondylitis,
+Brain Cancer, Parkinson's Disease, Idiopathic Pulmonary Fibrosis, Chronic Obstructive Pulmonary Disease,
+Metabolic Dysfunction-Associated Steatohepatitis, Primary Sclerosing Cholangitis.
 
 This document has two halves:
 
@@ -119,7 +121,8 @@ backend/src/main/resources/
 └── db/migration/
     ├── V1__init_schema.sql           tables + indexes + seed (ALS, Alzheimer's, Pancreatic Cancer)
     ├── V2__add_ankylosing_spondylitis.sql
-    └── V3__add_brain_cancer_and_parkinsons.sql
+    ├── V3__add_brain_cancer_and_parkinsons.sql
+    └── V4__add_pulmonary_and_liver_diseases.sql   IPF, COPD, MASH, PSC
 
 frontend/src/
 ├── main.tsx / App.tsx                Router with 3 routes
@@ -225,12 +228,29 @@ Both parse dates defensively with a list of `DateTimeFormatter`s (`parseFlexible
 sources use inconsistent date formats, and both swallow per-record parse errors so one bad row can't
 abort the batch. Failures per disease are caught and logged, not fatal.
 
+**Two source quirks worth knowing before you edit a query:**
+
+- **NCBI rate limit.** E-utilities allow 3 req/s from an un-keyed IP. Each disease costs two calls, so
+  an unthrottled sweep returns `429` and silently drops whole diseases — they just end up with zero
+  publications, with only a logged error. `PubMedIngestionJob.throttle()` spaces calls by 400ms.
+  If the disease list grows a lot, register a free NCBI API key (raises the limit to 10 req/s).
+- **`RestTemplate` re-encodes String URLs.** `ClinicalTrialsIngestionJob` passes `URI.create(url)`
+  rather than the `String` overload, because the `String` path escapes a pre-encoded `%22` into
+  `%2522`. That failure is silent too — the API returns zero studies rather than an error. Any
+  `DISEASE_QUERIES` value using `%`-encoding depends on this.
+
+Query terms are matched loosely by ClinicalTrials.gov, so a multi-word condition can pull in unrelated
+trials (unquoted, `Chronic Obstructive Pulmonary Disease` matched graft-versus-host and leukaemia
+studies). Wrapping the phrase in `%22…%22` restores precision where it matters.
+
 > **To add a disease you touch exactly three places:** (1) a new Flyway migration inserting the
 > `disease` row, (2) the `DISEASE_QUERIES` map in `ClinicalTrialsIngestionJob`, (3) the same map in
-> `PubMedIngestionJob`. Everything downstream is data-driven off `diseaseRepository.findAll()`.
-> (The dashboard subtitle string in `Dashboard.tsx` is the one cosmetic frontend touch.)
-> Note: those maps use `Map.of(...)`, which caps at 10 entries — switch to `Map.ofEntries(...)`
-> before exceeding it.
+> `PubMedIngestionJob`. Everything downstream is data-driven off `diseaseRepository.findAll()`,
+> including the dashboard subtitle and the event-feed filter chips — no frontend change needed.
+>
+> The map key **must match the `disease.name` column byte-for-byte**; a mismatch is silent — the
+> job's `if (query == null) continue;` just skips that disease and it stays permanently empty.
+> Both maps use `Map.ofEntries(...)`, so there is no entry-count ceiling to worry about.
 
 ### 2.5 Frontend
 

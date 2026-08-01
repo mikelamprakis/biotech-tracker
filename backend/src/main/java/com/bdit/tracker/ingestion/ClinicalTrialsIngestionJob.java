@@ -15,6 +15,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -30,13 +31,22 @@ public class ClinicalTrialsIngestionJob {
     private static final String BASE_URL =
             "https://clinicaltrials.gov/api/v2/studies?query.cond=%s&pageSize=50&sort=LastUpdatePostDate:desc&fields=NCTId,BriefTitle,OverallStatus,Phase,LeadSponsorName,StartDate,LastUpdatePostDate";
 
-    private static final Map<String, String> DISEASE_QUERIES = Map.of(
-            "ALS", "Amyotrophic+Lateral+Sclerosis",
-            "Alzheimer's Disease", "Alzheimer+Disease",
-            "Pancreatic Cancer", "Pancreatic+Cancer",
-            "Ankylosing Spondylitis", "Ankylosing+Spondylitis",
-            "Brain Cancer", "Brain+Neoplasms",
-            "Parkinson's Disease", "Parkinson+Disease"
+    private static final Map<String, String> DISEASE_QUERIES = Map.ofEntries(
+            Map.entry("ALS", "Amyotrophic+Lateral+Sclerosis"),
+            Map.entry("Alzheimer's Disease", "Alzheimer+Disease"),
+            Map.entry("Pancreatic Cancer", "Pancreatic+Cancer"),
+            Map.entry("Ankylosing Spondylitis", "Ankylosing+Spondylitis"),
+            Map.entry("Brain Cancer", "Brain+Neoplasms"),
+            Map.entry("Parkinson's Disease", "Parkinson+Disease"),
+            Map.entry("Idiopathic Pulmonary Fibrosis", "Idiopathic+Pulmonary+Fibrosis"),
+            // Quoted: unquoted, CTG's term matching pulls in unrelated "chronic … disease"
+            // trials (graft-versus-host, leukaemia). The phrase match drops that noise.
+            Map.entry("Chronic Obstructive Pulmonary Disease", "%22Chronic+Obstructive+Pulmonary+Disease%22"),
+            // MASH was renamed from NASH in 2023; most trials are still registered
+            // under the old name, so match both or we'd see ~10% of the field.
+            Map.entry("Metabolic Dysfunction-Associated Steatohepatitis",
+                    "Metabolic+Dysfunction-Associated+Steatohepatitis+OR+Nonalcoholic+Steatohepatitis"),
+            Map.entry("Primary Sclerosing Cholangitis", "Primary+Sclerosing+Cholangitis")
     );
 
     private final DiseaseRepository diseaseRepository;
@@ -79,7 +89,9 @@ public class ClinicalTrialsIngestionJob {
 
     private void ingestForDisease(Disease disease, String query) throws Exception {
         String url = String.format(BASE_URL, query);
-        String json = restTemplate.getForObject(url, String.class);
+        // URI.create, not the String overload: RestTemplate re-encodes a String URL and would
+        // turn the pre-encoded %22 phrase quotes into a literal %2522, silently matching nothing.
+        String json = restTemplate.getForObject(URI.create(url), String.class);
         JsonNode root = objectMapper.readTree(json);
         JsonNode studies = root.path("studies");
 

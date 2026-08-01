@@ -33,13 +33,26 @@ public class PubMedIngestionJob {
     private static final String FETCH_URL =
             "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&id=%s";
 
-    private static final Map<String, String> DISEASE_QUERIES = Map.of(
-            "ALS", "amyotrophic+lateral+sclerosis+treatment",
-            "Alzheimer's Disease", "alzheimer+disease+therapy",
-            "Pancreatic Cancer", "pancreatic+cancer+treatment",
-            "Ankylosing Spondylitis", "ankylosing+spondylitis+treatment",
-            "Brain Cancer", "brain+cancer+treatment",
-            "Parkinson's Disease", "parkinson+disease+therapy"
+    /**
+     * NCBI E-utilities allow 3 requests/second from an un-keyed IP and answer 429 above that.
+     * Each disease costs two calls (esearch + esummary), so an unthrottled loop over the disease
+     * list trips the limit and silently drops whole diseases. 400ms ≈ 2.5 req/s leaves margin;
+     * the cost is a few seconds on a job that runs every 8 hours.
+     */
+    private static final long NCBI_MIN_INTERVAL_MS = 400;
+
+    private static final Map<String, String> DISEASE_QUERIES = Map.ofEntries(
+            Map.entry("ALS", "amyotrophic+lateral+sclerosis+treatment"),
+            Map.entry("Alzheimer's Disease", "alzheimer+disease+therapy"),
+            Map.entry("Pancreatic Cancer", "pancreatic+cancer+treatment"),
+            Map.entry("Ankylosing Spondylitis", "ankylosing+spondylitis+treatment"),
+            Map.entry("Brain Cancer", "brain+cancer+treatment"),
+            Map.entry("Parkinson's Disease", "parkinson+disease+therapy"),
+            Map.entry("Idiopathic Pulmonary Fibrosis", "idiopathic+pulmonary+fibrosis+treatment"),
+            Map.entry("Chronic Obstructive Pulmonary Disease", "chronic+obstructive+pulmonary+disease+treatment"),
+            Map.entry("Metabolic Dysfunction-Associated Steatohepatitis",
+                    "metabolic+dysfunction-associated+steatohepatitis+treatment"),
+            Map.entry("Primary Sclerosing Cholangitis", "primary+sclerosing+cholangitis+treatment")
     );
 
     private final DiseaseRepository diseaseRepository;
@@ -82,6 +95,7 @@ public class PubMedIngestionJob {
 
     private void ingestForDisease(Disease disease, String query) throws Exception {
         String searchUrl = String.format(SEARCH_URL, query);
+        throttle();
         String searchJson = restTemplate.getForObject(searchUrl, String.class);
         JsonNode searchRoot = objectMapper.readTree(searchJson);
         JsonNode idList = searchRoot.path("esearchresult").path("idlist");
@@ -93,6 +107,7 @@ public class PubMedIngestionJob {
         if (ids.isEmpty()) return;
 
         String fetchUrl = String.format(FETCH_URL, String.join(",", ids));
+        throttle();
         String fetchJson = restTemplate.getForObject(fetchUrl, String.class);
         JsonNode fetchRoot = objectMapper.readTree(fetchJson);
         JsonNode results = fetchRoot.path("result");
@@ -120,6 +135,15 @@ public class PubMedIngestionJob {
             publicationRepository.save(pub);
             createEvent(disease, "PAPER_PUBLISHED",
                     "New publication: " + pub.getTitle(), 4, "PUBLICATION", pub.getId());
+        }
+    }
+
+    /** Spaces out E-utilities calls so a full disease sweep stays under NCBI's rate limit. */
+    private void throttle() {
+        try {
+            Thread.sleep(NCBI_MIN_INTERVAL_MS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
