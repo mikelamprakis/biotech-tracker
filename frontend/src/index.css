@@ -27,6 +27,30 @@ a:hover { text-decoration: underline; }
 
 .container { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem; }
 
+/* Shell — keeps the footer at the bottom of the viewport on short pages */
+.app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+.app-shell > main { flex: 1; }
+
+/* Footer / medical disclaimer */
+.site-footer {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 0;
+  margin-top: 3rem;
+}
+.site-footer .disclaimer {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.65;
+  max-width: 70ch;
+}
+.site-footer .disclaimer strong { color: var(--text); }
+.site-footer .footer-meta {
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 0.75rem;
+}
+
 /* Nav */
 nav { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.75rem 0; }
 nav .inner { display: flex; align-items: center; gap: 2rem; }
